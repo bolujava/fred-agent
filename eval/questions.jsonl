@@ -1,0 +1,15 @@
+{"question": "What was the US unemployment rate in January 2024?", "expected_series": "UNRATE", "expected_value": "3.7", "answerable": true}
+{"question": "What was the US unemployment rate in March 2024?", "expected_series": "UNRATE", "expected_value": "3.9", "answerable": true}
+{"question": "What was the US unemployment rate in December 2023?", "expected_series": "UNRATE", "expected_value": "3.8", "answerable": true}
+{"question": "What was the US GDP in Q4 2023?", "expected_series": "GDP", "expected_value": "28424.7", "answerable": true}
+{"question": "What was the US GDP in Q1 2024?", "expected_series": "GDP", "expected_value": "28708", "answerable": true}
+{"question": "What was the US inflation rate in December 2023?", "expected_series": "CPIAUCSL", "expected_value": "3.3", "answerable": true}
+{"question": "What was the US inflation rate in June 2024?", "expected_series": "CPIAUCSL", "expected_value": "3.0", "answerable": true}
+{"question": "How has the US inflation rate changed since 2020?", "expected_series": "CPIAUCSL", "expected_value": "trend", "answerable": true}
+{"question": "Compare US unemployment in January 2024 vs January 2020.", "expected_series": "UNRATE", "expected_value": "comparison", "answerable": true}
+{"question": "What is the current US federal funds rate?", "expected_series": "FEDFUNDS", "expected_value": "current", "answerable": true}
+{"question": "Who won the 2020 Super Bowl?", "expected_series": null, "expected_value": null, "answerable": false}
+{"question": "What is the capital of France?", "expected_series": null, "expected_value": null, "answerable": false}
+{"question": "How do I install Python on Windows?", "expected_series": null, "expected_value": null, "answerable": false}
+{"question": "What is the price of Bitcoin today?", "expected_series": null, "expected_value": null, "answerable": false}
+{"question": "Who is the CEO of the Federal Reserve?", "expected_series": null, "expected_value": null, "answerable": false}
