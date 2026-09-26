@@ -1,4 +1,4 @@
-from fred_client import search_series, get_observations
+from .fred_client import search_series, get_observations
 
 
 def tool_search_series(query: str) -> str:

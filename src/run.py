@@ -1,5 +1,5 @@
 import sys
-from agent import run_agent
+from .agent import run_agent
 
 if __name__ == "__main__":
     q = " ".join(sys.argv[1:]) or "What was the US unemployment rate in January 2024?"

@@ -3,7 +3,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import os
 
-from tools import TOOL_MAP
+from .tools import TOOL_MAP
 
 load_dotenv()
 
