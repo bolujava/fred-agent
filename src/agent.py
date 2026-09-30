@@ -3,7 +3,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import os
 
-from .tools import TOOL_MAP
+from tools import TOOL_MAP
 
 load_dotenv()
 
@@ -89,12 +89,14 @@ TOOLS = [
 ]
 
 
-def run_agent(question: str, max_steps: int = 5) -> dict:
-    """Run the ReAct loop. Returns final answer and tool call trace."""
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": question},
-    ]
+def run_agent(question: str, conversation=None, max_steps: int = 8) -> dict:
+    from memory import Conversation
+
+    if conversation is None:
+        conversation = Conversation()
+
+    conversation.add_user(question)
+    messages = conversation.as_messages(SYSTEM_PROMPT)
     trace = []
 
     for step in range(max_steps):
@@ -113,11 +115,14 @@ def run_agent(question: str, max_steps: int = 5) -> dict:
                 if attempt == 1:
                     raise
                 print(f"  [retry] {type(e).__name__}: {str(e)[:80]}")
+
         msg = response.choices[0].message
 
         # If no tool calls, we're done
         if not msg.tool_calls:
-            return {"answer": msg.content, "trace": trace}
+            answer = msg.content
+            conversation.add_assistant(answer)
+            return {"answer": answer, "trace": trace}
 
         # Add the assistant's tool call to history
         messages.append(msg)
@@ -137,4 +142,6 @@ def run_agent(question: str, max_steps: int = 5) -> dict:
                 "content": str(result),
             })
 
+    # If we hit max_steps, still record something
+    conversation.add_assistant("Max steps reached")
     return {"answer": "Max steps reached", "trace": trace}

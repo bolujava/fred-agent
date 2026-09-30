@@ -1,10 +1,11 @@
 import sys
 from pathlib import Path
-from fastapi import FastAPI, Form
+from fastapi import FastAPI, Form, Request, Response
 from fastapi.responses import HTMLResponse
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
-from .agent import run_agent
+from memory import Conversation
+from agent import run_agent
 
 app = FastAPI()
 
@@ -221,12 +222,35 @@ async def index():
     return HTML
 
 
+# In-memory session store. Resets when server restarts.
+# In production you'd use Redis or a database.
+SESSIONS = {}
+
+
 @app.post("/api/ask")
-async def ask(question: str = Form(...)):
+async def ask(
+    request: Request,
+    response: Response,
+    question: str = Form(...),
+):
     import time
+    import uuid
+
     start = time.time()
+
+    # Get or create a session ID
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        session_id = str(uuid.uuid4())
+        response.set_cookie("session_id", session_id, httponly=True, max_age=3600)
+
+    # Get or create a conversation for this session
+    if session_id not in SESSIONS:
+        SESSIONS[session_id] = Conversation()
+    conversation = SESSIONS[session_id]
+
     try:
-        result = run_agent(question)
+        result = run_agent(question, conversation=conversation)
         return {
             "answer": result["answer"],
             "trace": [{"tool": t["tool"], "args": t["args"]} for t in result["trace"]],

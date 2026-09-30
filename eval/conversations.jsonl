@@ -1,0 +1,10 @@
+{"turns": ["What was the US unemployment rate in January 2024?", "What about December 2023?"], "expected_final_series": "UNRATE", "expected_final_value": "3.8"}
+{"turns": ["What was the US unemployment rate in January 2024?", "What about March 2024?"], "expected_final_series": "UNRATE", "expected_final_value": "3.9"}
+{"turns": ["What was the US inflation rate in June 2024?", "What about December 2023?"], "expected_final_series": "CPIAUCSL", "expected_final_value": "3.3"}
+{"turns": ["What was the US GDP in Q4 2023?", "What about Q1 2024?"], "expected_final_series": "GDP", "expected_final_value": "28708"}
+{"turns": ["What was the US GDP in Q4 2023?", "What about Q3 2023?"], "expected_final_series": "GDP", "expected_final_value": "28074"}
+{"turns": ["What was the US unemployment rate in December 2023?", "What about January 2024?"], "expected_final_series": "UNRATE", "expected_final_value": "3.7"}
+{"turns": ["What was the US unemployment rate in March 2024?", "What about January 2024?"], "expected_final_series": "UNRATE", "expected_final_value": "3.7"}
+{"turns": ["What was the US inflation rate in December 2023?", "What about June 2024?"], "expected_final_series": "CPIAUCSL", "expected_final_value": "2.97"}
+{"turns": ["What was the US GDP in Q1 2024?", "What about Q4 2023?"], "expected_final_series": "GDP", "expected_final_value": "28424"}
+{"turns": ["What was the US unemployment rate in January 2024?", "What about February 2024?"], "expected_final_series": "UNRATE", "expected_final_value": "3.9"}

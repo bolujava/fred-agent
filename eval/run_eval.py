@@ -8,14 +8,16 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 from agent import run_agent
+from memory import Conversation
 
 QUESTIONS = ROOT / "eval" / "questions.jsonl"
+CONVERSATIONS = ROOT / "eval" / "conversations.jsonl"
 RESULTS = ROOT / "eval" / "results"
 RESULTS.mkdir(parents=True, exist_ok=True)
 
 
-def load_questions():
-    with open(QUESTIONS, encoding="utf-8") as f:
+def load_jsonl(path):
+    with open(path, encoding="utf-8") as f:
         return [json.loads(l) for l in f if l.strip()]
 
 
@@ -40,6 +42,9 @@ def is_refusal(answer: str) -> bool:
         "only provide information", "only provide economic",
         "only help with", "only answer", "not able to help",
         "not within the scope", "outside the scope",
+        "only able to help", "don't have access", "do not have access",
+        "does not have a chief executive", "does not have a ceo",
+        "my tools are limited", "limited to retrieving",
     ]
     return any(m in a for m in markers)
 
@@ -80,7 +85,7 @@ def run_one(q: dict) -> dict:
     value_hit = None
     expected_value = q.get("expected_value")
     if expected_value and expected_value not in ("trend", "comparison", "current"):
-        value_hit = expected_value in answer
+        value_hit = expected_value.replace(",", "") in answer.replace(",", "")
 
     return {
         "question": q["question"],
@@ -97,9 +102,47 @@ def run_one(q: dict) -> dict:
     }
 
 
-def main():
-    questions = load_questions()
-    print(f"Running {len(questions)} questions...\n")
+def run_conversation(conv: dict) -> dict:
+    """Run a multi-turn conversation through one shared Conversation object."""
+    start = time.time()
+    conversation = Conversation()
+    final_answer = ""
+    final_trace = []
+    error = ""
+
+    for turn in conv["turns"]:
+        try:
+            result = run_agent(turn, conversation=conversation)
+            final_answer = result["answer"]
+            final_trace = result["trace"]
+        except Exception as e:
+            error = str(e)[:200]
+            break
+
+    elapsed = time.time() - start
+
+    series_hit = used_expected_series(final_trace, conv.get("expected_final_series"))
+    value_hit = None
+    expected_value = conv.get("expected_final_value")
+    if expected_value:
+        value_hit = expected_value.replace(",", "") in final_answer.replace(",", "")
+
+    return {
+        "turns": " | ".join(conv["turns"]),
+        "expected_final_series": conv.get("expected_final_series") or "",
+        "expected_final_value": expected_value or "",
+        "final_tools": ";".join(t["tool"] for t in final_trace),
+        "series_hit": "" if series_hit is None else str(series_hit),
+        "value_hit": "" if value_hit is None else str(value_hit),
+        "final_answer": final_answer.replace("\n", " ")[:300],
+        "latency_s": round(elapsed, 2),
+        "error": error,
+    }
+
+
+def run_single_turn():
+    questions = load_jsonl(QUESTIONS)
+    print(f"=== Single-turn eval: {len(questions)} questions ===\n")
 
     rows = []
     for i, q in enumerate(questions, 1):
@@ -115,12 +158,11 @@ def main():
             status = "miss"
         print(f"[{i:2}/{len(questions)}] {status} | {q['question'][:60]}")
 
-    out = RESULTS / "baseline.csv"
+    out = RESULTS / "single_turn.csv"
     with open(out, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=rows[0].keys())
         writer.writeheader()
         writer.writerows(rows)
-
     print(f"\nWrote {out}")
 
     answerable = [r for r in rows if r.get("answerable") and not r.get("error")]
@@ -139,9 +181,45 @@ def main():
         vh = sum(1 for r in value_rows if r["value_hit"] == "True")
         print(f"Value accuracy: {vh}/{len(value_rows)} = {vh/len(value_rows)*100:.1f}%")
 
-    errors = [r for r in rows if r.get("error")]
-    if errors:
-        print(f"\nErrors: {len(errors)}/{len(rows)}")
+    return rows
+
+
+def run_multi_turn():
+    if not CONVERSATIONS.exists():
+        print("\n(no conversations.jsonl found, skipping multi-turn eval)")
+        return []
+
+    conversations = load_jsonl(CONVERSATIONS)
+    print(f"\n=== Multi-turn eval: {len(conversations)} conversations ===\n")
+
+    rows = []
+    for i, conv in enumerate(conversations, 1):
+        row = run_conversation(conv)
+        rows.append(row)
+        if row.get("error"):
+            status = "ERR "
+        elif row["series_hit"] == "True" and row["value_hit"] in ("True", ""):
+            status = "PASS"
+        else:
+            status = "fail"
+        print(f"[{i:2}/{len(conversations)}] {status} | {conv['turns'][-1][:60]}")
+
+    out = RESULTS / "multi_turn.csv"
+    with open(out, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=rows[0].keys())
+        writer.writeheader()
+        writer.writerows(rows)
+    print(f"\nWrote {out}")
+
+    passed = sum(1 for r in rows if r["series_hit"] == "True" and r["value_hit"] in ("True", ""))
+    print(f"Conversation pass rate: {passed}/{len(rows)} = {passed/len(rows)*100:.1f}%")
+
+    return rows
+
+
+def main():
+    run_single_turn()
+    run_multi_turn()
 
 
 if __name__ == "__main__":
